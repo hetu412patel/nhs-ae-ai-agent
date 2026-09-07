@@ -1,0 +1,4 @@
+Model,RMSE,MAE,R2
+Linear Regression,73049.0,58184.0,0.903
+kNN,89511.0,61906.0,0.859
+Random Forest,90711.0,61526.0,0.857
