@@ -70,11 +70,15 @@ nhs-ae-ai-agent/
 
 ## Dashboard Preview
 
-A&E Pressure Overview Dashboard
+**A&E Pressure Overview Dashboard**
+
 <img width="947" height="745" alt="image" src="https://github.com/user-attachments/assets/47040b9b-f82f-421b-a596-16757b4e2ad1" />
 
-A&E Detailed Trend
+
+**A&E Detailed Trend**
+
 <img width="1322" height="742" alt="image" src="https://github.com/user-attachments/assets/8f62511f-b3a7-4d67-8e85-2c7a92a6f839" />
+
 
 ## Project Status
 
