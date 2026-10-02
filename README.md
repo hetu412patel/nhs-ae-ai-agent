@@ -12,6 +12,7 @@ The project uses only public, aggregated England-level data and free, open tools
 .
 ├── Dataset/                          Raw NHS workbook and the cleaned monthly dataset
 ├── ae_dashboard/                     Gradio dashboard (Operational Risk Board)
+├── figures/                          All the images along with graphs,outputs and dashboard
 ├── outputs/                          Model results, predictions and the agent's input file
 ├── NHS_AE_Data_Preparation.ipynb     Step 1: clean, merge, baseline, risk flag, features
 ├── NHS_AE_EDA.ipynb                  Step 2: exploratory data analysis
