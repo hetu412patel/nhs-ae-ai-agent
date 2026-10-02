@@ -1,88 +1,105 @@
-# NHS A&E AI Agent — Operational Decision Support
+# NHS A&E Operational Intelligence
 
-AI Agent for NHS A&E operational decision support — forecasting, risk classification, an interactive Power BI dashboard, and an n8n + Ollama AI Agent that turns predictions into manager-facing recommendations.
+An AI-driven decision-support proof of concept for NHS A&E managers. It turns a monthly demand signal into a Low / Medium / High risk flag, shows it on a dashboard, and uses an AI agent to draft a short, plain-English recommendation that a person reviews.
 
-## Overview
+The project uses only public, aggregated England-level data and free, open tools. It gives decision support only (staffing, escalation and monitoring). It does not give clinical advice, and it has not been through a clinical-safety assessment.
 
-Predicting A&E pressure is not the same as acting on it — 123 NHS trusts already have forecasting tools live, but the output still sits on a dashboard for a manager to interpret manually. This project closes that gap with a free, end-to-end pipeline that takes 16 years of real NHS England A&E data, cleans and forecasts it in Python (Jupyter notebook), calculates a transparent risk flag, visualises it in an interactive Power BI dashboard, and — through a self-hosted n8n + Ollama AI Agent — turns the forecast into a plain-English recommendation that is logged to Google Sheets and emailed directly to a manager.
+<img width="1746" height="1100" alt="c_dashboard" src="https://github.com/user-attachments/assets/524abe6b-9bd9-4282-9cc9-f343e9b8d463" />
 
-## Key Results
+## Repository structure
 
-| Metric | Result |
+```
+.
+├── Dataset/                          Raw NHS workbook and the cleaned monthly dataset
+├── ae_dashboard/                     Gradio dashboard (Operational Risk Board)
+├── outputs/                          Model results, predictions and the agent's input file
+├── NHS_AE_Data_Preparation.ipynb     Step 1: clean, merge, baseline, risk flag, features
+├── NHS_AE_EDA.ipynb                  Step 2: exploratory data analysis
+├── NHS_AE_Forecasting.ipynb          Step 3: models, evaluation, prediction files
+└── README.md
+```
+
+| Path | What it contains |
 |---|---|
-| Forecasting model | Linear Regression |
-| Forecast RMSE | 72,285 patients |
-| Forecast R² | 0.907 (explains over 90% of monthly variance) |
-| Improvement over baseline | 68.8% better than a seasonal-naive baseline |
-| Risk classification model | Logistic Regression |
-| Classification accuracy / F1 | 79.9% / 77.9% |
-| Dataset coverage | 191 months (Aug 2010 – Jun 2026), 16 years of NHS England A&E data |
+| `Dataset/` | NHS England Monthly A&E Time Series (raw `.xls`) and `02_clean_Monthly_AE_data.csv` produced by the preparation notebook |
+| `ae_dashboard/` | The dashboard app (`app.py`) |
+| `outputs/` | `predictions_with_riskflag.csv`, `model_comparison_regression.csv`, `model_comparison_classification.csv`, `confusion_matrix.csv`, `Automation_ready_data.csv` |
+| `NHS_AE_Data_Preparation.ipynb` | Cleans and merges the Activity and Performance sheets, derives rates, builds the 3-year seasonal baseline, risk flag and model features |
+| `NHS_AE_EDA.ipynb` | Demand, 4-hour performance, 12-hour waits, admissions, seasonality and correlations |
+| `NHS_AE_Forecasting.ipynb` | Compares regression and classification models, saves predictions and the file the AI agent reads |
 
-## Project Pipeline
+## Data
 
-**Clean the Data** (Python) → **Explore & Forecast** (Python / Jupyter) → **Build Risk Flag** (rule base) → **Visualise** (Power BI) → **Build AI Agent** (n8n + Ollama) → **Deliver & Log** (Google Sheets + Gmail)
+NHS England, A&E Attendances and Emergency Admissions, Monthly Time Series (Open Government Licence). August 2010 to June 2026 gives 191 monthly rows, of which 179 can be risk-rated (the first 12 months have no earlier same-month data for a baseline).
 
-## Repository Structure
+## How it works
 
-```
-nhs-ae-ai-agent/
-├── README.md
-├── Dataset/
-│   ├── 01_raw_Monthly-AE-Time-Series.csv     # Raw NHS England A&E workbook
-│   └── 02_clean_Monthly_AE_data.csv          # Cleaned, analysis-ready dataset
-├── outputs/
-│   ├── predictions_with_riskflag.csv         # Forecasted attendances + predicted risk flag
-│   ├── model_comparison_regression.csv       # Regression model comparison (RMSE, MAE, R²)
-│   ├── model_comparison_classification.csv   # Classification model comparison (accuracy, F1)
-│   └── confusion_matrix.csv                  # Risk classifier confusion matrix
-├── NHS_AE_Data_Preparation.ipynb             # Raw Excel → clean, one-row-per-month dataset
-├── NHS_AE_EDA.ipynb                          # Exploratory analysis: seasonal patterns, performance trends, correlations
-├── NHS_AE_Forecasting.ipynb                  # Attendance forecasting + risk classification models
-└── NHS_A&E_Dashboard.pbix                    # Power BI dashboard file
-```
+1. **Prepare:** clean and merge the data, then add season, a 3-year same-month baseline and a risk flag.
+2. **Analyse:** explore patterns, then fit models for monthly attendances and for the risk band.
+3. **Show:** the dashboard displays KPIs, trends, drivers and a table of high-risk months.
+4. **Act:** an n8n workflow with a local Ollama model reads `outputs/Automation_ready_data.csv`, drafts a short recommendation, logs it to Google Sheets and emails the manager for Medium and High months. A person reviews every suggestion.
 
-## Tech Stack
+### Risk rule
 
-| Layer | Tool |
+`ratio = attendances this month ÷ average of the same month in the previous 3 years`
+
+| Ratio | Risk |
 |---|---|
-| Data cleaning & analysis | Python (pandas, NumPy), Jupyter notebook |
-| Forecasting & classification | Python (scikit-learn) |
-| Visualisation | Power BI |
-| AI Agent / automation | n8n (self-hosted), Ollama (local LLM) |
-| Delivery & logging | Google Sheets, Gmail |
+| above 1.10 | High |
+| above 1.03, up to 1.10 | Medium |
+| 1.03 or below | Low |
 
-## How to Run the Notebooks
+The thresholds are a transparent project rule, not a clinical standard.
 
-1. Clone the repository:
+## Results
+
+Months rated: 56 Low, 93 Medium, 30 High.
+
+| Task | Best model | Result (5-fold cross-validation) |
+|---|---|---|
+| Estimate monthly attendances | Linear regression | R² 0.907, RMSE 72,285, 68.8% lower error than the seasonal baseline |
+| Classify risk band | Logistic regression | Accuracy 79.9%, F1-score 0.779 (143 of 179 months correct) |
+
+**Forward check.** Most model inputs describe the month being estimated, so a time-ordered test was added: train to June 2023, then predict July 2023 to June 2026 from the previous month's information only. Risk-band accuracy fell to 75% and macro-F1 to 0.52. Treat the headline scores as how well the model explains a month, not how well it predicts ahead.
+
+## Run it
+
+Requirements: Python 3.10+.
+
+```bash
+pip install pandas numpy scikit-learn matplotlib seaborn plotly gradio xlrd jupyter
 ```
-   git clone https://github.com/hetu412patel/nhs-ae-ai-agent.git
-   cd nhs-ae-ai-agent
+
+**1. Notebooks.** Open and run them in this order, from the repository root:
+
+1. `NHS_AE_Data_Preparation.ipynb`
+2. `NHS_AE_EDA.ipynb`
+3. `NHS_AE_Forecasting.ipynb`
+
+**2. Dashboard.** `app.py` reads `Dataset/02_clean_Monthly_AE_data.csv` and `outputs/predictions_with_riskflag.csv` relative to the folder you run it from. From the repository root:
+
+```bash
+python ae_dashboard/app.py
 ```
-2. Install dependencies:
+
+If your `ae_dashboard` folder holds its own copies of `Dataset/` and `outputs/`, run it from inside that folder instead:
+
+```bash
+cd ae_dashboard
+python app.py
 ```
-   pip install pandas numpy scikit-learn matplotlib seaborn jupyter
-```
-3. Run the notebooks in order:
-   - `NHS_AE_Data_Preparation.ipynb`
-   - `NHS_AE_EDA.ipynb`
-   - `NHS_AE_Forecasting.ipynb`
-4. Open `NHS_A&E_Dashboard.pbix` in Power BI Desktop to explore the live dashboard
 
-## Dashboard Preview
+Then open the local address shown in the terminal (usually http://127.0.0.1:7860). The dashboard has three pages: Overview, Drivers & Explorer, and High-risk & Outlook.
 
-**A&E Pressure Overview Dashboard**
+## Known limitations
 
-<img width="942" height="742" alt="image" src="https://github.com/user-attachments/assets/96d16260-8b0d-4a74-9566-84257b294f3a" />
+- National monthly data only; local and trust-level differences are hidden.
+- Only 179 months can be modelled, and the 3-year baseline moves with demand.
+- Recent months are almost all rated Medium, so the Medium band needs refining.
+- The risk thresholds are a judgement and are not clinically validated.
+- The AI agent has not yet been reviewed by A&E managers.
+- Not assessed under the NHS clinical-safety standards (DCB0129 / DCB0160).
 
+## Licence and data source
 
-
-**A&E Detailed Trend**
-
-<img width="1322" height="742" alt="image" src="https://github.com/user-attachments/assets/8f62511f-b3a7-4d67-8e85-2c7a92a6f839" />
-
-
-## Project Status
-
-**Built now:** forecasting model, risk classifier, live Power BI dashboard, and the full n8n + Ollama AI Agent pipeline — all built and tested end-to-end.
-
-**Future scope:** manager feedback learning loop, trust-level granular data across 100+ NHS trusts.
+Data: NHS England, Open Government Licence v3.0. Add a licence for the code here if you want others to reuse it.
