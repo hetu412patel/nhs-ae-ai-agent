@@ -61,8 +61,6 @@ Months rated: 56 Low, 93 Medium, 30 High.
 | Estimate monthly attendances | Linear regression | R² 0.907, RMSE 72,285, 68.8% lower error than the seasonal baseline |
 | Classify risk band | Logistic regression | Accuracy 79.9%, F1-score 0.779 (143 of 179 months correct) |
 
-**Forward check.** Most model inputs describe the month being estimated, so a time-ordered test was added: train to June 2023, then predict July 2023 to June 2026 from the previous month's information only. Risk-band accuracy fell to 75% and macro-F1 to 0.52. Treat the headline scores as how well the model explains a month, not how well it predicts ahead.
-
 ## Run it
 
 Requirements: Python 3.10+.
