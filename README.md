@@ -4,7 +4,7 @@ An AI-driven decision-support proof of concept for NHS A&E managers. It turns a 
 
 The project uses only public, aggregated England-level data and free, open tools. It gives decision support only (staffing, escalation and monitoring). It does not give clinical advice, and it has not been through a clinical-safety assessment.
 
-<img width="1746" height="1100" alt="c_dashboard" src="https://github.com/user-attachments/assets/524abe6b-9bd9-4282-9cc9-f343e9b8d463" />
+<img width="963" height="587" alt="image" src="https://github.com/user-attachments/assets/f91087a5-5f6c-4a77-a466-5c3b89242ab9" />
 
 ## Repository structure
 
