@@ -4,7 +4,9 @@ An AI-driven decision-support proof of concept for NHS A&E managers. It turns a 
 
 The project uses only public, aggregated England-level data and free, open tools. It gives decision support only (staffing, escalation and monitoring). It does not give clinical advice, and it has not been through a clinical-safety assessment.
 
-<img width="1822" height="831" alt="image" src="https://github.com/user-attachments/assets/9f8d6d55-0cea-4728-921b-aa57556d6e48" />
+**Author:** Hetakshi Patel, Generate Sustainable Impact Research Internship (October 2026)
+
+<img width="1822" height="831" alt="NHS A&E Operational Intelligence project overview" src="https://github.com/user-attachments/assets/9f8d6d55-0cea-4728-921b-aa57556d6e48" />
 
 ## Repository structure
 
@@ -12,7 +14,7 @@ The project uses only public, aggregated England-level data and free, open tools
 .
 ├── Dataset/                          Raw NHS workbook and the cleaned monthly dataset
 ├── ae_dashboard/                     Gradio dashboard (Operational Risk Board)
-├── figures/                          All the images along with graphs,outputs and dashboard
+├── figures/                          Images used in the report and slides (charts, diagrams, dashboard)
 ├── outputs/                          Model results, predictions and the agent's input file
 ├── NHS_AE_Data_Preparation.ipynb     Step 1: clean, merge, baseline, risk flag, features
 ├── NHS_AE_EDA.ipynb                  Step 2: exploratory data analysis
@@ -22,8 +24,9 @@ The project uses only public, aggregated England-level data and free, open tools
 
 | Path | What it contains |
 |---|---|
-| `Dataset/` | NHS England Monthly A&E Time Series (raw `.xls`) and `02_clean_Monthly_AE_data.csv` produced by the preparation notebook |
+| `Dataset/` | NHS England Monthly A&E Time Series (raw `.xls`) and `02_clean_Monthly_AE_data.csv` (191 rows, 25 columns) produced by the preparation notebook |
 | `ae_dashboard/` | The dashboard app (`app.py`) |
+| `figures/` | Charts, diagrams and dashboard screenshots used in the report and slides |
 | `outputs/` | `predictions_with_riskflag.csv`, `model_comparison_regression.csv`, `model_comparison_classification.csv`, `confusion_matrix.csv`, `Automation_ready_data.csv` |
 | `NHS_AE_Data_Preparation.ipynb` | Cleans and merges the Activity and Performance sheets, derives rates, builds the 3-year seasonal baseline, risk flag and model features |
 | `NHS_AE_EDA.ipynb` | Demand, 4-hour performance, 12-hour waits, admissions, seasonality and correlations |
@@ -44,11 +47,11 @@ NHS England, A&E Attendances and Emergency Admissions, Monthly Time Series (Open
 
 `ratio = attendances this month ÷ average of the same month in the previous 3 years`
 
-| Ratio | Risk |
-|---|---|
-| above 1.10 | High |
-| above 1.03, up to 1.10 | Medium |
-| 1.03 or below | Low |
+| Ratio | Meaning | Risk |
+|---|---|---|
+| above 1.10 | more than 10% above normal | High |
+| above 1.03, up to 1.10 | 3% to 10% above normal | Medium |
+| 1.03 or below | within 3% of normal | Low |
 
 The thresholds are a transparent project rule, not a clinical standard.
 
@@ -59,7 +62,9 @@ Months rated: 56 Low, 93 Medium, 30 High.
 | Task | Best model | Result (5-fold cross-validation) |
 |---|---|---|
 | Estimate monthly attendances | Linear regression | R² 0.907, RMSE 72,285, 68.8% lower error than the seasonal baseline |
-| Classify risk band | Logistic regression | Accuracy 79.9%, F1-score 0.779 (143 of 179 months correct) |
+| Classify risk band | Logistic regression | Accuracy 79.9%, macro-F1 0.779 (143 of 179 months correct) |
+
+These scores come from inputs that describe the month being estimated, so they show how well a model explains a month, not how well it predicts ahead. A stricter time-ordered forward check gives lower accuracy; see Section 5.1 of the report.
 
 ## Run it
 
@@ -81,24 +86,18 @@ pip install pandas numpy scikit-learn matplotlib seaborn plotly gradio xlrd jupy
 python ae_dashboard/app.py
 ```
 
-If your `ae_dashboard` folder holds its own copies of `Dataset/` and `outputs/`, run it from inside that folder instead:
-
-```bash
-cd ae_dashboard
-python app.py
-```
-
-Then open the local address shown in the terminal (usually http://127.0.0.1:7860). The dashboard has three pages: Overview, Drivers & Explorer, and High-risk & Outlook.
+Then open the local address shown in the terminal (usually http://127.0.0.1:7860). The dashboard has three pages: Overview, Drivers & Explorer, and High-risk & Outlook. The "Next month outlook" chart compares actual attendances with the model's estimate for the same month.
 
 ## Known limitations
 
 - National monthly data only; local and trust-level differences are hidden.
 - Only 179 months can be modelled, and the 3-year baseline moves with demand.
+- Headline scores overstate how well the model predicts ahead (see Results).
 - Recent months are almost all rated Medium, so the Medium band needs refining.
 - The risk thresholds are a judgement and are not clinically validated.
 - The AI agent has not yet been reviewed by A&E managers.
 - Not assessed under the NHS clinical-safety standards (DCB0129 / DCB0160).
 
-## Licence and data source
+## Data source
 
-Data: NHS England, Open Government Licence v3.0. Add a licence for the code here if you want others to reuse it.
+NHS England, A&E Attendances and Emergency Admissions: Monthly Time Series, published under the Open Government Licence v3.0.
