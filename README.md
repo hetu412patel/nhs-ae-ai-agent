@@ -100,4 +100,4 @@ Then open the local address shown in the terminal (usually http://127.0.0.1:7860
 
 ## Data source
 
-NHS England, A&E Attendances and Emergency Admissions: Monthly Time Series, published under the Open Government Licence v3.0.
+NHS England, A&E Attendances and Emergency Admissions: Monthly Time Series
