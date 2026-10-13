@@ -112,7 +112,7 @@ Simple models beat Random Forest and kNN on both tasks. Errors lean towards over
 | Average error (RMSE) | 72,285 | 100,822 |
 | Improvement on baseline | 68.8% | 53.1% |
 | Risk accuracy | 79.9% | 75.0% |
-| Macro-F1 | 0.779 | 0.52 |
+| F1-score | 0.779 | 0.52 |
 
 Treat outputs as guidance with about a 4% margin.
 
@@ -154,9 +154,7 @@ You can run the project in three stages. Stages A and B need no accounts or cred
 ```bash
 git clone https://github.com/hetu412patel/nhs-ae-ai-agent.git
 cd nhs-ae-ai-agent
-python -m venv .venv
-# Windows:      .venv\Scripts\activate
-# macOS/Linux:  source .venv/bin/activate
+
 pip install -r requirements.txt
 ```
 
