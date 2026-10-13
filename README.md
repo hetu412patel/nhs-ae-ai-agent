@@ -41,6 +41,8 @@ Once a month the agent reads the latest figures, writes a short plain-English no
 
 <img width="1492" height="267" alt="n8n AI agent workflow" src="https://github.com/user-attachments/assets/67da2cfd-9dbd-499d-ac5b-8a4508562899" />
 
+The exported workflow is in `n8n/NHS_AE_Agent_workflow.json` (import it in n8n with *Import from file*). It holds no passwords or keys; you connect your own credentials after importing.
+
 ### What each node does
 
 | # | Node | What it does |
@@ -50,7 +52,7 @@ Once a month the agent reads the latest figures, writes a short plain-English no
 | 3 | **Extract from File** | Converts the CSV into rows the workflow can use. |
 | 4 | **Sort** | Orders rows by month so the newest comes first. |
 | 5 | **Limit** | Keeps only the latest month. |
-| 6 | **Edit Fields** | Selects the real figures (attendances, forecast, baseline, 4-hour performance, 12-hour waits, last month's values, risk flag) and shapes them for the prompt. |
+| 6 | **Edit Fields** | Selects the real figures (attendances, model estimate, baseline, 4-hour performance, 12-hour waits, last month's values, risk flag) and shapes them for the prompt. |
 | 7 | **Basic LLM Chain** | Sends the figures plus fixed rules to the model and receives the recommendation. |
 | 7a | **Ollama Chat Model** | The language model, running locally on the user's own machine. No data leaves it. |
 | 8 | **Edit Fields1** | Tidies the model's reply into the columns for the log. |
@@ -60,13 +62,13 @@ Once a month the agent reads the latest figures, writes a short plain-English no
 
 ### What the manager receives
 
-A short note, in plain English, built from real figures, covering **staffing, escalation and monitoring**. The prompt tells the model to use only the figures supplied, to give no clinical advice, and to match the advice to the risk level.
+A short note, in plain English, built from real figures, covering **staffing, escalation and monitoring**. The prompt tells the model to use only the figures supplied, to give no clinical advice, and to match the advice to the risk level. The full prompt is in Appendix C of the report (`docs/`).
 
 ### Why this is safe to put in front of a manager
 
 - **Human in charge:** the agent advises; the manager accepts, amends or ignores.
 - **Logged:** every recommendation is time-stamped in Google Sheets.
-- **Grounded:** advice quotes real numbers, and model accuracy is stated openly.
+- **Grounded:** the advice quotes real figures from the data. Model accuracy is not left to the AI; it is stated in this README and in the report.
 - **Private by design:** public monthly England totals only, no patient-level data, and the model runs locally.
 - **Low cost:** n8n, Ollama and the data are all free and open.
 
@@ -94,6 +96,8 @@ Thresholds are a transparent project rule, not a clinical standard. Result: **56
 
 `Month`, `TotalAttendances`, `RiskFlag`, `PredictedTotalAttendances`, `PredictedRiskFlag`, `PercentWithin4hrs`, `Breach12hrRate`, `Season`, `SeasonalBaselineAvg`, plus last month's values (`PrevMonthAttendance`, `PrevMonthPercentWithin4hrs`, `PrevMonthBreach12hrRate`) so the note can explain the trend, not just one snapshot.
 
+A note on names: `PredictedTotalAttendances` is the model's **estimate for the same month** (it is fitted to the months it describes). It is not a forecast of a future month. The column name is kept so the n8n workflow keeps working.
+
 ---
 
 ## 4. Models and results
@@ -105,12 +109,14 @@ Thresholds are a transparent project rule, not a clinical standard. Result: **56
 
 Simple models beat Random Forest and kNN on both tasks. Errors lean towards over-warning (21) rather than under-warning (15), and 22 of 30 High months were found.
 
-**Forward check (stricter, time-ordered).** Train to June 2023, predict July 2023 to June 2026 using only information available a month earlier. Cross-validated scores show how well a model *explains* a month; the forward check shows how it behaves *ahead*. Code: *Forward check* section of `NHS_AE_Forecasting.ipynb` (saves `outputs/forward_check_results.csv`).
+One input, `Attendances_RollingMean3`, includes the month being estimated, so the cross-validated scores (for both tasks) show how well a model *explains* a month. Removing it from the attendance model gives R² 0.898 and RMSE 74,108.
+
+**Forward check (stricter, time-ordered).** Train to June 2023, predict July 2023 to June 2026 using only information available a month earlier. The forward check shows how the model behaves *ahead*. Code: *Forward check* section of `NHS_AE_Forecasting.ipynb` (saves `outputs/forward_check_results.csv`).
 
 | Measure | Cross-validated | Forward check |
 |---|---|---|
-| Average error (RMSE) | 72,285 | 100,822 |
-| Improvement on baseline | 68.8% | 53.1% |
+| Average error (RMSE) | 72,285 | 98,479 |
+| Improvement on baseline | 68.8% | 54.2% |
 | Risk accuracy | 79.9% | 75.0% |
 | F1-score | 0.779 | 0.52 |
 
@@ -120,7 +126,9 @@ Treat outputs as guidance with about a 4% margin.
 
 ## 5. Dashboard (Operational Risk Board)
 
-Gradio + Plotly, three pages with filters: **Overview** (KPIs, trend, risk by season), **Drivers & Explorer**, and **High-risk & Outlook** (table of High months and a "Model fit" chart). The "Model fit" chart compares actual attendances with the model's estimate for the same months; it shows fit, not a forecast.
+Gradio + Plotly, three pages with filters: **Overview** (KPIs, trend, risk by season), **Drivers & Explorer**, and **High-risk & Model fit** (table of High months and a "Model fit" chart). The "Model fit" chart compares actual attendances with the model's estimate for the same months; it shows fit, not a forecast.
+
+The **pressure score** (0–100) is 40% attendances + 35% four-hour gap + 25% 12-hour breach rate. Each part is scaled between its lowest and highest value over the rated months.
 
 Latest month (June 2026): 2,437,906 attendances, 75.0% seen within 4 hours (20.0 points below the 95% target), pressure score 80/100, Medium risk.
 
@@ -133,8 +141,9 @@ Latest month (June 2026): 2,437,906 attendances, 75.0% seen within 4 hours (20.0
 ├── ae_dashboard/
 │   └── app.py                                   Gradio dashboard (Operational Risk Board)
 ├── Dataset/                                     Raw NHS workbook (.xls) and cleaned dataset (02_clean_Monthly_AE_data.csv)
-├── figures/                                     Charts, diagrams, dashboard and n8n workflow screenshots
-├── outputs/                                     Model results, predictions, forward-check results, agent input file
+├── figures/                                     Charts, diagrams, dashboard and n8n workflow screenshots used in the report
+├── n8n/                                         Exported n8n workflow (NHS_AE_Agent_workflow.json, no credentials)
+├── outputs/                                     Model results, predictions, forward-check results, agent input file, two chart PNGs
 ├── NHS_AE_Data_Preparation.ipynb                Step 1: clean, merge, baseline, risk flag, features
 ├── NHS_AE_EDA.ipynb                             Step 2: exploratory data analysis
 ├── NHS_AE_Forecasting.ipynb                     Step 3: models, evaluation, forward check, agent input file
@@ -166,7 +175,7 @@ Open and run these in order (Jupyter or VS Code):
 2. `NHS_AE_EDA.ipynb` → charts and key findings
 3. `NHS_AE_Forecasting.ipynb` → model comparison, forward check, and the files in `outputs/`
 
-Check that `outputs/` now contains `predictions_with_riskflag.csv`, `model_comparison_regression.csv`, `model_comparison_classification.csv`, `confusion_matrix.csv`, `forward_check_results.csv` and `Automation_ready_data.csv`.
+Check that `outputs/` now contains `predictions_with_riskflag.csv`, `model_comparison_regression.csv`, `model_comparison_classification.csv`, `confusion_matrix.csv`, `forward_check_results.csv` and `Automation_ready_data.csv`. The notebooks also save `confusion_matrix.png` and `correlation_matrix.png` there. The other pictures in `figures/` were exported by hand for the report.
 
 #### B. Launch the dashboard
 
@@ -192,7 +201,7 @@ Open http://127.0.0.1:7860. It reads `Dataset/02_clean_Monthly_AE_data.csv` and 
   ollama pull <model>
   ```
 
-  Use the model named in the project report (Appendix C, included in this repository), or any model your machine can run.
+  Use the model named in Appendix C of the project report (in `docs/`), or any model your machine can run. Different models word the note a little differently.
 
 **2. Point n8n at the data file**
 
@@ -208,7 +217,7 @@ setx N8N_FILES_DIR "C:\Users\<you>\.n8n-files"
 export N8N_FILES_DIR="$HOME/.n8n-files"
 ```
 
-Re-run the last cell of `NHS_AE_Forecasting.ipynb`. It prints a line confirming the copy. If you skip this step, copy `outputs/Automation_ready_data.csv` into the folder by hand.
+Re-run the last cell of `NHS_AE_Forecasting.ipynb`. It prints a line confirming the copy (or tells you the variable is not set). If you skip this step, copy `outputs/Automation_ready_data.csv` into the folder by hand.
 
 **3. Create your own Google credentials (needed for Google Sheets and Gmail)**
 
@@ -220,13 +229,13 @@ Credentials are **not** included in this repository and must never be committed.
 4. Copy the **Client ID** and **Client Secret** into n8n: *Credentials → Create → Gmail OAuth2 / Google Sheets OAuth2*, then click *Sign in with Google*.
 5. Create a Google Sheet for the log, with a header row matching the columns set in the **Edit Fields1** node (for example month, risk level, recommendation, timestamp).
 
-**4. Build the workflow in n8n**
+**4. Set up the workflow in n8n**
 
 ```bash
 n8n start
 ```
 
-Open http://localhost:5678 and create the workflow shown in [The AI Agent](#2-the-ai-agent-n8n--ollama), node by node:
+Open http://localhost:5678. The quickest way is to import `n8n/NHS_AE_Agent_workflow.json` (*Import from file*), then connect your own Ollama, Google Sheets and Gmail credentials. If you prefer to build it yourself, create the workflow shown in [The AI Agent](#2-the-ai-agent-n8n--ollama), node by node:
 
 | Node | Setting to use |
 |---|---|
@@ -235,11 +244,13 @@ Open http://localhost:5678 and create the workflow shown in [The AI Agent](#2-th
 | Extract from File | Operation: Extract From CSV |
 | Sort / Limit | Sort by `Month` (newest first), limit to 1 item |
 | Edit Fields | Map the CSV columns you want the model to quote |
-| Basic LLM Chain + Ollama Chat Model | Ollama credential base URL `http://localhost:11434`; choose your model; paste the prompt from Appendix C of the project report (included in this repository) |
+| Basic LLM Chain + Ollama Chat Model | Ollama credential base URL `http://localhost:11434`; choose your model; paste the prompt from Appendix C of the project report |
 | Edit Fields1 | Shape the reply into the log columns |
 | Append row in sheet | Google Sheets credential, your log sheet |
 | If | Send to the email branch when the risk level is Medium or High |
 | Send a message | Gmail credential, the manager's address |
+
+Tip: in n8n *Settings*, set the timezone to your own (for example Europe/London) so the time stamps in the log are right.
 
 **5. Test it**
 
@@ -267,6 +278,7 @@ Click *Execute workflow* once. Confirm that a new row appears in your Google She
 - Recent months are almost all rated Medium (17 of the last 18), so the Medium band needs refining.
 - Risk thresholds are a judgement and are not clinically validated.
 - The agent has not yet been reviewed by A&E managers, and the project has not been assessed under DCB0129 / DCB0160.
+- The AI model can word the note differently each time it runs, so two runs of the same month may not read exactly alike.
 
 **Next steps:** test with A&E managers; refine the Medium band and baseline; move to trust-level data (MSitAE and ECDS); complete a clinical-safety and governance review.
 
