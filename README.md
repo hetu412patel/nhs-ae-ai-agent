@@ -133,17 +133,11 @@ Latest month (June 2026): 2,437,906 attendances, 75.0% seen within 4 hours (20.0
 ├── ae_dashboard/
 │   └── app.py                                   Gradio dashboard (Operational Risk Board)
 ├── Dataset/                                     Raw NHS workbook (.xls) and cleaned dataset (02_clean_Monthly_AE_data.csv)
-├── Literature Review/                           Sources and notes behind the research gap
-├── Other/                                       Supporting files
 ├── figures/                                     Charts, diagrams, dashboard and n8n workflow screenshots
 ├── outputs/                                     Model results, predictions, forward-check results, agent input file
 ├── NHS_AE_Data_Preparation.ipynb                Step 1: clean, merge, baseline, risk flag, features
 ├── NHS_AE_EDA.ipynb                             Step 2: exploratory data analysis
 ├── NHS_AE_Forecasting.ipynb                     Step 3: models, evaluation, forward check, agent input file
-├── NHS_AE_Operational_Intelligence_Report.docx  Full project report (Word)
-├── NHS_AE_Operational_Intelligence_Report.pdf   Full project report (PDF)
-├── NHS_AE_Operational_Intelligence_Report.pptx  Final presentation slides
-├── NHS_AI_Agent.pptx                            AI agent walkthrough slides
 ├── requirements.txt                             Python packages for the whole project
 └── README.md
 ```
