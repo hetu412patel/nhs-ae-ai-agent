@@ -1,0 +1,5 @@
+Measure,Cross-validated,Forward check
+Average error (RMSE),72285.0,98479.0
+Improvement on baseline (%),68.8,54.2
+Risk accuracy (%),79.9,75.0
+Macro-F1,0.779,0.52
