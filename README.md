@@ -142,7 +142,6 @@ Latest month (June 2026): 2,437,906 attendances, 75.0% seen within 4 hours (20.0
 │   └── app.py                                   Gradio dashboard (Operational Risk Board)
 ├── Dataset/                                     Raw NHS workbook (.xls) and cleaned dataset (02_clean_Monthly_AE_data.csv)
 ├── figures/                                     Charts, diagrams, dashboard and n8n workflow screenshots used in the report
-├── n8n/                                         Exported n8n workflow (NHS_AE_Agent_workflow.json, no credentials)
 ├── outputs/                                     Model results, predictions, forward-check results, agent input file, two chart PNGs
 ├── NHS_AE_Data_Preparation.ipynb                Step 1: clean, merge, baseline, risk flag, features
 ├── NHS_AE_EDA.ipynb                             Step 2: exploratory data analysis
