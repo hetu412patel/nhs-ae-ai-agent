@@ -7,7 +7,7 @@ Built entirely with public, aggregated England-level data and free, open tools (
 **Author:** Hetakshi Patel - https://www.linkedin.com/in/hetakshi-patel/ (October 2026)
 
 <img width="1822" height="831" alt="NHS A&E Operational Intelligence project overview" src="https://github.com/user-attachments/assets/9f8d6d55-0cea-4728-921b-aa57556d6e48" />
-<img width="860" height="642" alt="Screenshot 2026-10-14 040809" src="https://github.com/user-attachments/assets/2a30be5d-6968-4c58-8f59-8e78da84e208" />
+<img width="860" height="642" alt="AI-Agent-email" src="https://github.com/user-attachments/assets/b6cab97c-e366-49b1-968a-3adc946c115d" />
 
 
 ## At a glance
