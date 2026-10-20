@@ -1,24 +1,60 @@
 # NHS A&E Operational Intelligence
 
-**An AI agent that turns a monthly A&E demand signal into a plain-English recommendation for the manager, logs it, and alerts them when pressure rises. A person reviews every suggestion.**
+**A data-driven operational intelligence prototype that analyses NHS A&E demand, identifies risk patterns, visualises operational trends, and uses a locally hosted AI agent to turn the findings into a plain-English monthly AI generated recommendation for a manager.**
 
-Built entirely with public, aggregated England-level data and free, open tools (Python, n8n, Ollama, Gradio). It gives decision support only (staffing, escalation and monitoring). It gives no clinical advice and has not been through a clinical-safety assessment.
+A person reviews every AI generated suggestion before any operational decision is made. Agent emails the manager only when risk is Medium or High.
 
-**Author:** Hetakshi Patel - https://www.linkedin.com/in/hetakshi-patel/ (October 2026)
+Built entirely with public, aggregated England-level data and free/open tools including Python, n8n, Ollama, Gradio and Plotly.
+
+> **Important:** This is a research prototype for decision support, not an operational NHS system. It provides no clinical advice and has not been through a clinical-safety assessment.
+
+**Author:** Hetakshi Patel ([LinkedIn](https://www.linkedin.com/in/hetakshi-patel/)) · October 2026
 
 <img width="1822" height="831" alt="NHS A&E Operational Intelligence project overview" src="https://github.com/user-attachments/assets/9f8d6d55-0cea-4728-921b-aa57556d6e48" />
-<img width="860" height="642" alt="AI-Agent-email" src="https://github.com/user-attachments/assets/b6cab97c-e366-49b1-968a-3adc946c115d" />
 
+<img width="860" height="642" alt="Example email alert from the AI agent" src="https://github.com/user-attachments/assets/b6cab97c-e366-49b1-968a-3adc946c115d" />
+
+---
+
+## Contents
+
+1. [At a glance](#at-a-glance)
+2. [Key analytical findings](#key-analytical-findings)
+3. [Literature review and the gap](#1-literature-review-and-the-gap)
+4. [The AI Agent (n8n + Ollama)](#2-the-ai-agent-n8n--ollama)
+5. [Data](#3-data)
+6. [Models and results](#4-models-and-results)
+7. [Dashboard](#5-dashboard-operational-risk-board)
+8. [Repository structure and how to run](#6-repository-structure-and-how-to-run)
+9. [Limitations, next steps and reuse](#7-limitations-next-steps-and-reuse)
+10. [Key takeaway](#8-key-takeaway)
+
+---
 
 ## At a glance
 
 | | |
 |---|---|
 | **Problem** | A&E demand is about a third higher than in 2010–11 while four-hour performance has fallen from 97.2% to 75.0%. Managers get forecasts, but not explained advice on what to do. |
-| **Gap** | Forecasting tools exist, but no established system turns a forecast into an explained, manager-facing recommendation with a human decision. |
+| **Gap** | Existing forecasting tools focus primarily on predicting demand. This project explores how a demand or risk signal can be translated into an explained, manager-facing recommendation while keeping the human decision-maker in control. |
 | **Solution** | Clean NHS data → transparent Low / Medium / High risk flag → dashboard + **n8n AI agent** that drafts, logs and emails a recommendation. |
 | **Safety design** | Operational data only, local AI model, every recommendation time-stamped and logged, manager accepts, amends or ignores. |
 | **Status** | Research prototype. Not yet reviewed by A&E managers or assessed under DCB0129 / DCB0160. |
+
+---
+
+## Key analytical findings
+
+The project uses NHS England's monthly A&E data from August 2010 to June 2026.
+
+- A&E attendances have increased by approximately **33%** since 2010–11.
+- The proportion of patients seen within four hours has fallen from **97.2% to 75.0%**.
+- Higher-attendance periods generally coincide with weaker four-hour performance (correlation of about -0.62 across all months).
+- **179 months** can be risk-rated using the three-year same-month baseline.
+- The transparent risk rule identifies **56 Low, 93 Medium and 30 High** months.
+- The latest month in the dataset, June 2026, is classified as **Medium** risk.
+
+The purpose is not to replace operational judgement, but to make the underlying evidence easier to understand and act on.
 
 ---
 
@@ -31,9 +67,14 @@ Built entirely with public, aggregated England-level data and free, open tools (
 | **Patient-facing AI** | NHS App AI triage (2026). Symptom checkers scored 55.8% triage accuracy in 2020 (Schmieding et al., 2022). | Talks to patients directly, so it carries the highest safety risk. |
 | **Governance** | Clinical-safety standards DCB0129 / DCB0160. | Not built for adaptive AI, which explains the caution around it. |
 
-**The gap this project fills:** *forecast → explanation → recommendation → human decision.* No system was found that links all four for A&E managers. This repository builds a small working example using free tools.
+**The gap this project fills:** *forecast → explanation → recommendation → human decision.* This repository builds a small working example using free tools.
 
-**Research questions:** (1) Can the approach transfer to other sectors? (2) Why is decision-support AI rare in the NHS? (3) Does a funded model exist elsewhere in the NHS? (4) Can a free-tool agent show the way?
+**Research questions**
+
+1. Can the approach transfer to other sectors?
+2. Why is decision-support AI rare in the NHS?
+3. Does a funded model exist elsewhere in the NHS?
+4. Can a free-tool agent show the way?
 
 ---
 
@@ -66,7 +107,7 @@ The exported workflow is in `n8n/NHS_AE_Agent_workflow.json` (import it in n8n w
 
 A short note, in plain English, built from real figures, covering **staffing, escalation and monitoring**. The prompt tells the model to use only the figures supplied, to give no clinical advice, and to match the advice to the risk level. The full prompt is in Appendix C of the report (`docs/`).
 
-### Why this is safe to put in front of a manager
+### Responsible AI design
 
 - **Human in charge:** the agent advises; the manager accepts, amends or ignores.
 - **Logged:** every recommendation is time-stamped in Google Sheets.
@@ -84,7 +125,9 @@ A short note, in plain English, built from real figures, covering **staffing, es
 
 ### Risk rule
 
-`ratio = attendances this month ÷ average of the same month in the previous 3 years`
+```
+ratio = attendances this month ÷ average of the same month in the previous 3 years
+```
 
 | Ratio | Meaning | Risk |
 |---|---|---|
@@ -98,7 +141,7 @@ Thresholds are a transparent project rule, not a clinical standard. Result: **56
 
 `Month`, `TotalAttendances`, `RiskFlag`, `PredictedTotalAttendances`, `PredictedRiskFlag`, `PercentWithin4hrs`, `Breach12hrRate`, `Season`, `SeasonalBaselineAvg`, plus last month's values (`PrevMonthAttendance`, `PrevMonthPercentWithin4hrs`, `PrevMonthBreach12hrRate`) so the note can explain the trend, not just one snapshot.
 
-A note on names: `PredictedTotalAttendances` is the model's **estimate for the same month** (it is fitted to the months it describes). It is not a forecast of a future month. The column name is kept so the n8n workflow keeps working.
+> **A note on names:** `PredictedTotalAttendances` is the model's **estimate for the same month** (it is fitted to the months it describes). It is not a forecast of a future month. The column name is kept so the n8n workflow keeps working.
 
 ---
 
@@ -113,26 +156,34 @@ Simple models beat Random Forest and kNN on both tasks. Errors lean towards over
 
 One input, `Attendances_RollingMean3`, includes the month being estimated, so the cross-validated scores (for both tasks) show how well a model *explains* a month. Removing it from the attendance model gives R² 0.898 and RMSE 74,108.
 
-**Forward check (stricter, time-ordered).** Train to June 2023, predict July 2023 to June 2026 using only information available a month earlier. The forward check shows how the model behaves *ahead*. Code: *Forward check* section of `NHS_AE_Forecasting.ipynb` (saves `outputs/forward_check_results.csv`).
+### Forward check (stricter, time-ordered)
+
+Train to June 2023, predict July 2023 to June 2026 using only information available a month earlier. The forward check shows how the model behaves *ahead*. Code: *Forward check* section of `NHS_AE_Forecasting.ipynb` (saves `outputs/forward_check_results.csv`).
 
 | Measure | Cross-validated | Forward check |
 |---|---|---|
 | Average error (RMSE) | 72,285 | 98,479 |
 | Improvement on baseline | 68.8% | 54.2% |
 | Risk accuracy | 79.9% | 75.0% |
-| F1-score | 0.779 | 0.52 |
+| Macro-F1 | 0.779 | 0.52 |
 
-Treat outputs as guidance with about a 4% margin.
+Risk accuracy is about 5 percentage points lower when predicting ahead, so treat outputs as guidance.
 
 ---
 
 ## 5. Dashboard (Operational Risk Board)
 
-Gradio + Plotly, three pages with filters: **Overview** (KPIs, trend, risk by season), **Drivers & Explorer**, and **High-risk & Model fit** (table of High months and a "Model fit" chart). The "Model fit" chart compares actual attendances with the model's estimate for the same months; it shows fit, not a forecast.
+Gradio + Plotly, three pages with filters:
+
+- **Overview:** KPIs, trend, risk by season
+- **Drivers & Explorer**
+- **High-risk & Model fit:** table of High months and a "Model fit" chart
+
+The "Model fit" chart compares actual attendances with the model's estimate for the same months; it shows fit, not a forecast.
 
 The **pressure score** (0–100) is 40% attendances + 35% four-hour gap + 25% 12-hour breach rate. Each part is scaled between its lowest and highest value over the rated months.
 
-Latest month (June 2026): 2,437,906 attendances, 75.0% seen within 4 hours (20.0 points below the 95% target), pressure score 80/100, Medium risk.
+**Latest month (June 2026):** 2,437,906 attendances, 75.0% seen within 4 hours (20.0 points below the 95% target), pressure score 80/100, Medium risk.
 
 ---
 
@@ -141,14 +192,17 @@ Latest month (June 2026): 2,437,906 attendances, 75.0% seen within 4 hours (20.0
 ```
 .
 ├── ae_dashboard/
-│   └── app.py                                   Gradio dashboard (Operational Risk Board)
-├── Dataset/                                     Raw NHS workbook (.xls) and cleaned dataset (02_clean_Monthly_AE_data.csv)
-├── figures/                                     Charts, diagrams, dashboard and n8n workflow screenshots used in the report
-├── outputs/                                     Model results, predictions, forward-check results, agent input file, two chart PNGs
-├── NHS_AE_Data_Preparation.ipynb                Step 1: clean, merge, baseline, risk flag, features
-├── NHS_AE_EDA.ipynb                             Step 2: exploratory data analysis
-├── NHS_AE_Forecasting.ipynb                     Step 3: models, evaluation, forward check, agent input file
-├── requirements.txt                             Python packages for the whole project
+│   └── app.py                        Gradio dashboard (Operational Risk Board)
+├── Dataset/                          Raw NHS workbook (.xls) and cleaned dataset (02_clean_Monthly_AE_data.csv)
+├── docs/                             Full report (with Appendix C, the agent prompt) and slides
+├── figures/                          Charts, diagrams, dashboard and n8n workflow screenshots used in the report
+├── n8n/
+│   └── NHS_AE_Agent_workflow.json    Exported agent workflow (no credentials)
+├── outputs/                          Model results, predictions, forward-check results, agent input file, two chart PNGs
+├── NHS_AE_Data_Preparation.ipynb     Step 1: clean, merge, baseline, risk flag, features
+├── NHS_AE_EDA.ipynb                  Step 2: exploratory data analysis
+├── NHS_AE_Forecasting.ipynb          Step 3: models, evaluation, forward check, agent input file
+├── requirements.txt                  Python packages for the whole project
 └── README.md
 ```
 
@@ -184,25 +238,25 @@ Check that `outputs/` now contains `predictions_with_riskflag.csv`, `model_compa
 python ae_dashboard/app.py
 ```
 
-Open http://127.0.0.1:7860. It reads `Dataset/02_clean_Monthly_AE_data.csv` and `outputs/predictions_with_riskflag.csv`, so run stage A first and run the command from the repository root.
+Open <http://127.0.0.1:7860>. It reads `Dataset/02_clean_Monthly_AE_data.csv` and `outputs/predictions_with_riskflag.csv`, so run stage A first and run the command from the repository root.
 
 #### C. Run the AI agent (optional)
 
 **1. Install the tools**
 
-- Install [Node.js](https://nodejs.org) (LTS), then n8n:
+Install [Node.js](https://nodejs.org) (LTS), then n8n:
 
-  ```bash
-  npm install -g n8n
-  ```
+```bash
+npm install -g n8n
+```
 
-- Install [Ollama](https://ollama.com), then download a model and keep Ollama running:
+Install [Ollama](https://ollama.com), then download a model and keep Ollama running:
 
-  ```bash
-  ollama pull llama3.2
-  ```
+```bash
+ollama pull llama3.2
+```
 
-  Use the model named in Appendix C of the project report (in `docs/`), or any model your machine can run. Different models word the note a little differently.
+Use the model named in Appendix C of the project report (in `docs/`), or any model your machine can run. Different models word the note a little differently.
 
 **2. Point n8n at the data file**
 
@@ -236,7 +290,7 @@ Credentials are **not** included in this repository and must never be committed.
 n8n start
 ```
 
-Open http://localhost:5678. The quickest way is to import `n8n/NHS_AE_Agent_workflow.json` (*Import from file*), then connect your own Ollama, Google Sheets and Gmail credentials. If you prefer to build it yourself, create the workflow shown in [The AI Agent](#2-the-ai-agent-n8n--ollama), node by node:
+Open <http://localhost:5678>. The quickest way is to import `n8n/NHS_AE_Agent_workflow.json` (*Import from file*), then connect your own Ollama, Google Sheets and Gmail credentials. If you prefer to build it yourself, create the workflow shown in [The AI Agent](#2-the-ai-agent-n8n--ollama), node by node:
 
 | Node | Setting to use |
 |---|---|
@@ -251,7 +305,7 @@ Open http://localhost:5678. The quickest way is to import `n8n/NHS_AE_Agent_work
 | If | Send to the email branch when the risk level is Medium or High |
 | Send a message | Gmail credential, the manager's address |
 
-Tip: in n8n *Settings*, set the timezone to your own (for example Europe/London) so the time stamps in the log are right.
+> **Tip:** in n8n *Settings*, set the timezone to your own (for example Europe/London) so the time stamps in the log are right.
 
 **5. Test it**
 
@@ -272,7 +326,8 @@ Click *Execute workflow* once. Confirm that a new row appears in your Google She
 
 ## 7. Limitations, next steps and reuse
 
-**Limitations**
+### Limitations
+
 - National monthly data only; local and trust-level differences are hidden.
 - Only 179 months can be modelled, and the 3-year baseline moves with demand (Covid-19 months distort it).
 - Headline scores overstate how well the model predicts ahead; see the forward check.
@@ -281,10 +336,31 @@ Click *Execute workflow* once. Confirm that a new row appears in your Google She
 - The agent has not yet been reviewed by A&E managers, and the project has not been assessed under DCB0129 / DCB0160.
 - The AI model can word the note differently each time it runs, so two runs of the same month may not read exactly alike.
 
-**Next steps:** test with A&E managers; refine the Medium band and baseline; move to trust-level data (MSitAE and ECDS); complete a clinical-safety and governance review.
+### Next steps
 
-**Reuse beyond the NHS:** the same five-step pattern (operational data → forecast or risk score → transparent rule → plain-English recommendation → human decision and log) could serve other services. Only the NHS A&E version has been built and tested.
+- Test with A&E managers.
+- Refine the Medium band and baseline.
+- Move to trust-level data (MSitAE and ECDS).
+- Complete a clinical-safety and governance review.
+
+### Reuse beyond the NHS
+
+The same five-step pattern could serve other services:
+
+**operational data → forecast or risk score → transparent rule → plain-English recommendation → human decision and log**
+
+Only the NHS A&E version has been built and tested.
 
 ---
 
-*Data: NHS England Monthly A&E Time Series (Open Government Licence). Research prototype; decision support only.*
+## 8. Key takeaway
+
+This project shows how a data analyst can move beyond producing charts and models to build a complete operational intelligence workflow.
+
+The focus is not on letting AI make decisions. It is on using **data + analytics + visualisation + automation + AI** to make operational information easier for a human decision-maker to understand and act on.
+
+From predicting the problem to helping make the decision, while keeping the human in charge.
+
+---
+
+*Data: NHS England Monthly A&E Time Series (Open Government Licence). Research prototype. Decision support only. No clinical advice. Not clinically validated.*
