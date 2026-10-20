@@ -199,7 +199,7 @@ Open http://127.0.0.1:7860. It reads `Dataset/02_clean_Monthly_AE_data.csv` and 
 - Install [Ollama](https://ollama.com), then download a model and keep Ollama running:
 
   ```bash
-  ollama pull <model>
+  ollama pull llama3.2
   ```
 
   Use the model named in Appendix C of the project report (in `docs/`), or any model your machine can run. Different models word the note a little differently.
